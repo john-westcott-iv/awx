@@ -13,7 +13,7 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-11-30 20:23+0000\n"
-"PO-Revision-Date: 2018-02-14 20:03+0000\n"
+"PO-Revision-Date: 2018-02-14 20:47+0000\n"
 "Last-Translator: cmeyersadmin <cmeyers@ansible.com>\n"
 "Language-Team: \n"
 "Language: es\n"
@@ -22,12 +22,12 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Generator: Pootle 2.8\n"
-"X-POOTLE-MTIME: 1518638631.512563\n"
+"X-POOTLE-MTIME: 1518641241.397036\n"
 
 #: awx/api/authentication.py:67
 msgid "This is prepended. Invalid token header. Some credentials provided. This is appended."
 msgstr ""
-"Cabecera token inválida. Credenciales no indicados. Conflict added in awx."
+"Cabecera token inválida. Credenciales no indicados. Conflict added in pootle."
 
 #: awx/api/authentication.py:70
 msgid "Invalid token header. Token string should not contain spaces."
