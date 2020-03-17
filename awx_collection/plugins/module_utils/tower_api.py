@@ -463,6 +463,10 @@ class TowerModule(AnsibleModule):
             self.exit_json(**self.json_output)
 
     def modify_associations(self, association_endpoint, new_association_list):
+        # if we got None instead of [] we are not modifying the association_list
+        if new_association_list == None:
+            return
+
         # First get the existing associations
         response = self.get_all_endpoint(association_endpoint)
         existing_associated_ids = [association['id'] for association in response['json']['results']]
@@ -530,7 +534,11 @@ class TowerModule(AnsibleModule):
         # Process any associations with this item
         if associations is not None:
             for association_type in associations:
-                self.modify_associations(response, associations[association_type])
+                if response['json']['related'][association_type]:
+                    self.modify_associations(response['json']['related'][association_type], associations[association_type])
+                else:
+                    self.fail_json(msg="Association type of {0} is not valid for {1}".format(association_type, item_type))
+           
 
         # If we have an on_create method and we actually changed something we can call on_create
         if on_create is not None and self.json_output['changed']:
@@ -588,9 +596,11 @@ class TowerModule(AnsibleModule):
 
         # Process any associations with this item
         if associations is not None:
-            for association_type, id_list in associations.items():
-                endpoint = '{0}{1}/'.format(item_url, association_type)
-                self.modify_associations(endpoint, id_list)
+            for association_type in associations:
+                if existing_item['related'][association_type]:
+                    self.modify_associations(existing_item['related'][association_type], associations[association_type])
+                else:
+                    self.fail_json(msg="Association type of {0} is not valid for {1}".format(association_type, item_type))
 
         # If we change something and have an on_change call it
         if on_update is not None and self.json_output['changed']:
