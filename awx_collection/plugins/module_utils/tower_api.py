@@ -563,8 +563,6 @@ class TowerModule(AnsibleModule):
 
     def create_if_needed(self, existing_item, new_item, endpoint, on_create=None, item_type='unknown', associations=None, additional_posts=[]):
 
-    def create_if_needed(self, existing_item, new_item, endpoint, on_create=None, item_type='unknown', associations=None):
-
         # This will exit from the module on its own
         # If the method successfully creates an item and on_create param is defined,
         #    the on_create parameter will be called as a method pasing in this object and the json from the response
