@@ -29,6 +29,7 @@ def test_create_group(run_module, admin_user):
         'id': group.id,
         'name': 'Test Group',
         'changed': True,
+        'created': True,
     }
 
 
@@ -46,7 +47,7 @@ def test_associate_hosts_and_groups(run_module, admin_user, organization):
         name='Test Group',
         inventory='test-inv',
         hosts=[inv_hosts[1].name, inv_hosts[2].name],
-        groups=[child.name],
+        children=[child.name],
         state='present'
     ), admin_user)
     assert not result.get('failed', False), result.get('msg', result)
@@ -75,5 +76,7 @@ def test_tower_group_idempotent(run_module, admin_user):
     result.pop('invocation')
     assert result == {
         'id': group.id,
+        'field_changes': {},
+        'updated': False,
         'changed': False,  # idempotency assertion
     }

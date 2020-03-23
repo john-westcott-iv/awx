@@ -47,9 +47,9 @@ options:
       required: False
       type: list
       elements: str
-    groups:
+    children:
       description:
-        - List of groups that should be nested inside in this group.
+        - List of groups that should be nested inside of this group.
       required: False
       type: list
       elements: str
@@ -98,7 +98,7 @@ def main():
         inventory=dict(required=True),
         variables=dict(type='dict', required=False),
         hosts=dict(type='list', elements='str', default=None),
-        groups=dict(type='list', elements='str', default=None),
+        children=dict(type='list', elements='str', default=None),
         state=dict(choices=['present', 'absent'], default='present'),
     )
 
@@ -113,7 +113,7 @@ def main():
     state = module.params.pop('state')
     variables = module.params.get('variables')
     hosts = module.params.get('hosts')
-    groups = module.params.get('groups')
+    children = module.params.get('children')
 
     # Attempt to look up the related items the user specified (these will fail the module if not found)
     inventory_id = module.resolve_name_to_id('inventories', inventory)
@@ -121,12 +121,12 @@ def main():
     if hosts is not None:
         hosts_ids = []
         for item in hosts:
-            hosts_ids.append( module.resolve_name_to_id('hosts', item) )
-    groups_ids = None
-    if groups is not None:
-        groups_ids = []
-        for item in groups:
-            groups_ids.append( module.resolve_name_to_id('groups', item) )
+            hosts_ids.append(module.resolve_name_to_id('hosts', item))
+    children_ids = None
+    if children is not None:
+        children_ids = []
+        for item in children:
+            children_ids.append(module.resolve_name_to_id('groups', item))
 
     # Attempt to look up the object based on the provided name and inventory ID
     group = module.get_one('groups', **{
@@ -167,7 +167,11 @@ def main():
         module.delete_if_needed(group)
     elif state == 'present':
         # If the state was present we can let the module build or update the existing group, this will return on its own
-        module.create_or_update_if_needed(group, group_fields, endpoint='groups', item_type='group', associations={ 'hosts': hosts_ids, 'children': groups_ids,})
+        module.create_or_update_if_needed(group,
+                                          group_fields,
+                                          endpoint='groups',
+                                          item_type='group',
+                                          associations={'hosts': hosts_ids, 'children': children_ids})
 
 
 if __name__ == '__main__':
