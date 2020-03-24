@@ -50,6 +50,7 @@ The following notes are changes that may require changes to playbooks:
  - `tower_group` used to also service inventory sources, but this functionality has been removed from this module; use `tower_inventory_source` instead.
  - Specified `tower_config` file used to handle `k=v` pairs on a single line; this is no longer supported. Please use a file formatted as `yaml`, `json` or `ini` only.
  - Some return values (e.g., `credential_type`) have been removed. Use of `id` is recommended.
+ - tower_credential no longer supports passing a file name to ssh_key_data.
 
 ## Running Unit Tests
 
