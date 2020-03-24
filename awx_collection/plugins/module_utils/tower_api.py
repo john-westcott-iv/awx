@@ -10,7 +10,6 @@ from ansible.module_utils.six.moves.urllib.error import HTTPError
 from ansible.module_utils.six.moves.http_cookiejar import CookieJar
 from ansible.module_utils.six.moves.configparser import ConfigParser, NoOptionError
 from socket import gethostbyname
-import json
 import re
 from json import loads, dumps
 from os.path import isfile, expanduser, split, join, exists, isdir
