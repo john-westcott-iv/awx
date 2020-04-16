@@ -41,9 +41,10 @@ options:
 {% endif %}
       required: {{ item['json']['actions']['POST'][option]['required'] }}
       type: {{ type_map[ item['json']['actions']['POST'][option]['type'] ] }}
-{% if 'default' in item['json']['actions']['POST'][option] %}
-{# for tower_job_template/extra vars, its type is dict but its default is '', so we want to make that {} #}
-{%   if item['json']['actions']['POST'][option]['default'] == '' and type_map[ item['json']['actions']['POST'][option]['type'] ] == 'dict' %}
+{% if item['json']['actions']['POST'][option].get('default', '') not in [None, ''] %}
+{#   In tower_job_template/extra vars, its type is dict but its default is '', so we want to make that {} #}
+{#   In schedules/extra data, its type is dict adn the default is {}, so we also want to make that {} #}
+{%   if item['json']['actions']['POST'][option]['default'] in ['',{}] and type_map[ item['json']['actions']['POST'][option]['type'] ] == 'dict' %}
       default: {}
 {%   else %}
       default: '{{ item['json']['actions']['POST'][option]['default'] }}'
@@ -121,12 +122,12 @@ def main():
 {%     endfor %}
 {{     option_data.append('choices=[{}]'.format(all_choices | join(', '))) -}}
 {%   endif %}
-{%   if item['json']['actions']['POST'][option].get('default', '') != '' %}
-{%     set default_value = item['json']['actions']['POST'][option]['default'] %}
-{%     if item['json']['actions']['POST'][option]['default'] == '' and type_map[ item['json']['actions']['POST'][option]['type'] ] == 'dict' %}
-{%       set default_value = '{}' %}
+{%   if item['json']['actions']['POST'][option].get('default', '') not in [None, ''] %}
+{%     if item['json']['actions']['POST'][option]['default'] in ['',{}] and type_map[ item['json']['actions']['POST'][option]['type'] ] == 'dict' %}
+{{       option_data.append("default={}") -}}
+{%     else %}
+{{       option_data.append("default='{}'".format(item['json']['actions']['POST'][option]['default'])) -}}
 {%     endif %}
-{{     option_data.append("default='{}'".format(default_value)) -}}
 {%   endif %}
 {%   if aliases[item_type][option] | default(False) %}
 {%     set alias_list = [] %}
