@@ -1,0 +1,13 @@
+---
+help_orverrides:
+  schedules:
+    extra_data: Specify C(extra_vars) for the template.
+    scm_branch: Branch to use in job run. Project default used if blank. Only allowed if project allow_override field is set to true.
+    job_type: The job type to use for the job template.
+    job_tags: Comma separated list of the tags to use for the job template.
+    skip_tags: Comma separated list of the tags to skip for the job template.
+    limit: A host pattern to further constrain the list of hosts managed or affected by the playbook
+    diff_mode: Enable diff mode for the job template.
+    verbosity: Control the output level Ansible produces as the playbook runs. 0 - Normal, 1 - Verbose, 2 - More Verbose, 3 - Debug, 4 - Connection Debug.
+    unified_job_template: Name of unified job template to schedule.
+

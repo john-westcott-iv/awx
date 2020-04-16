@@ -11,6 +11,7 @@
     - vars/associations.yml
     - vars/resolution.yml
     - vars/examples.yml
+    - vars/help_orverrides.yml
   module_defaults:
     uri:
       validate_certs: false

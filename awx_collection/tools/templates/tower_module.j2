@@ -34,7 +34,9 @@ options:
 {# to do: sort documentation options #}
     {{ option }}:
       description:
-{% if 'help_text' in item['json']['actions']['POST'][option] %}
+{% if option in help_orverrides[item_type] | default({}) %}
+        - {{ help_orverrides[item_type][option] }}
+{% elif 'help_text' in item['json']['actions']['POST'][option] %}
         - {{ item['json']['actions']['POST'][option]['help_text'] }}
 {% else %}
         - NO DESCRIPTION GIVEN IN THE TOWER API
