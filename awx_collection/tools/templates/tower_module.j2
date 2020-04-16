@@ -105,8 +105,12 @@ def main():
     argument_spec = dict(
 {% for option in item['json']['actions']['POST'] %}
 {%   set option_data = [] %}
-{{   option_data.append('required={}'.format(item['json']['actions']['POST'][option]['required'])) -}}
-{{   option_data.append('type=\'{}\''.format(type_map[item['json']['actions']['POST'][option]['type']])) -}}
+{%   if item['json']['actions']['POST'][option]['required'] %}
+{{       option_data.append('required={}'.format(item['json']['actions']['POST'][option]['required'])) -}}
+{%   endif %}
+{%   if type_map[item['json']['actions']['POST'][option]['type']] != 'str' %}
+{{       option_data.append('type=\'{}\''.format(type_map[item['json']['actions']['POST'][option]['type']])) -}}
+{%   endif %}
 {%   if item['json']['actions']['POST'][option]['type'] == 'password' %}
 {{     option_data.append('no_log=True') -}}
 {%   endif %}
@@ -133,7 +137,7 @@ def main():
 {%   endif %}
         {{ option }}=dict({{ option_data | join(', ') }}),
 {% if option == name_option %}
-        new_{{ name_option }}=dict(required=False, type='str'),
+        new_{{ name_option }}=dict(),
 {% endif %}
 {% endfor %}
 {% for association_option in associations[item_type] | default([]) %}
