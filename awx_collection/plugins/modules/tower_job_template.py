@@ -399,12 +399,8 @@ def main():
     vault_credential = module.params.get('vault_credential')
     credentials = module.params.get('credentials')
     if vault_credential is not '':
-        if credentials is None:
-            credentials = []
         credentials.append(vault_credential)
     if credential is not '':
-        if credentials is None:
-            credentials = []
         credentials.append(credential)
 
     # Attempt to look up an existing item based on the provided data
@@ -452,7 +448,7 @@ def main():
 
     association_fields = {}
 
-    if credentials is not None:
+    if len(credentials) != 0:
         association_fields['credentials'] = []
         for item in credentials:
             association_fields['credentials'].append(module.resolve_name_to_id('credentials', item))
