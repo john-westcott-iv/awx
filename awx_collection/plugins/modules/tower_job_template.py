@@ -65,7 +65,6 @@ options:
       type: list
       elements: str
       version_added: 2.8
-      default: []
     vault_credential:
       description:
         - Name of the vault credential to use for the job template.
@@ -348,7 +347,7 @@ def main():
         credential=dict(default=''),
         vault_credential=dict(default=''),
         custom_virtualenv=dict(),
-        credentials=dict(type='list', default=[], elements='str'),
+        credentials=dict(type='list', elements='str'),
         forks=dict(type='int'),
         limit=dict(default=''),
         verbosity=dict(type='int', choices=[0, 1, 2, 3, 4], default=0),
@@ -399,8 +398,12 @@ def main():
     vault_credential = module.params.get('vault_credential')
     credentials = module.params.get('credentials')
     if vault_credential is not '':
+        if credentials is None:
+            credentials = []
         credentials.append(vault_credential)
     if credential is not '':
+        if credentials is None:
+	    credentials = []
         credentials.append(credential)
 
     # Attempt to look up an existing item based on the provided data
@@ -448,7 +451,7 @@ def main():
 
     association_fields = {}
 
-    if len(credentials) != 0:
+    if credentials is not None:
         association_fields['credentials'] = []
         for item in credentials:
             association_fields['credentials'].append(module.resolve_name_to_id('credentials', item))
