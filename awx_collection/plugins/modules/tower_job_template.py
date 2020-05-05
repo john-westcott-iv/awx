@@ -398,11 +398,11 @@ def main():
     credential = module.params.get('credential')
     vault_credential = module.params.get('vault_credential')
     credentials = module.params.get('credentials')
-    if vault_credential:
+    if vault_credential is not None:
         if credentials is None:
             credentials = []
         credentials.append(vault_credential)
-    if credential:
+    if credential is not None:
         if credentials is None:
             credentials = []
         credentials.append(credential)
@@ -452,14 +452,12 @@ def main():
 
     association_fields = {}
 
-    credentials_ids = None
     if credentials is not None:
         association_fields['credentials'] = []
         for item in credentials:
             association_fields['credentials'].append(module.resolve_name_to_id('credentials', item))
 
     labels = module.params.get('labels')
-    labels_ids = None
     if labels is not None:
         association_fields['labels'] = []
         for item in labels:
