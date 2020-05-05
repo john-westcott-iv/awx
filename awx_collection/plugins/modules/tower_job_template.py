@@ -398,11 +398,11 @@ def main():
     credential = module.params.get('credential')
     vault_credential = module.params.get('vault_credential')
     credentials = module.params.get('credentials')
-    if vault_credential is not None:
+    if vault_credential is not '':
         if credentials is None:
             credentials = []
         credentials.append(vault_credential)
-    if credential is not None:
+    if credential is not '':
         if credentials is None:
             credentials = []
         credentials.append(credential)
