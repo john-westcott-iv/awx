@@ -16,7 +16,7 @@ ANSIBLE_METADATA = {'metadata_version': '1.1',
 DOCUMENTATION = '''
 ---
 module: tower_export
-author: "Jeff Bradberry (@jbradberry)"
+author: "John Westcott IV (@john-westcott-iv)"
 version_added: "3.7"
 short_description: export resources from Ansible Tower.
 description:
@@ -108,9 +108,9 @@ from ..module_utils.tower_awxkit import TowerAWXKitModule
 
 try:
     from awxkit.api.pages.api import EXPORTABLE_RESOURCES
-    HAS_AWX_KIT=True
+    HAS_EXPORTABLE_RESOURCES=True
 except ImportError:
-    HAS_AWX_KIT=False
+    HAS_EXPORTABLE_RESOURCES=False
 
 
 def main():
@@ -119,11 +119,14 @@ def main():
     )
 
     # We are not going to raise an error here because the __init__ method of TowerAWXKitModule will do that for us
-    if HAS_AWX_KIT:
+    if HAS_EXPORTABLE_RESOURCES:
         for resource in EXPORTABLE_RESOURCES:
             argument_spec[resource] = dict()
 
     module = TowerAWXKitModule(argument_spec=argument_spec)
+
+    if not HAS_EXPORTABLE_RESOURCES:
+        module.fail_json(msg="Your version of awxkit does not have import/export")
 
     # The export process will never change a Tower system
     module.json_output['changed'] = False
