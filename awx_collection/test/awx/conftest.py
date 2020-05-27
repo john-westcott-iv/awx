@@ -142,7 +142,7 @@ def run_module(request, collection_import):
         def mock_load_params(self):
             self.params = module_params
 
-        with mock.patch.object(resource_module.TowerModule, '_load_params', new=mock_load_params):
+        with mock.patch.object(resource_module.TowerAPIModule, '_load_params', new=mock_load_params):
             # Call the test utility (like a mock server) instead of issuing HTTP requests
             with mock.patch('ansible.module_utils.urls.Request.open', new=new_open):
                 if HAS_TOWER_CLI:

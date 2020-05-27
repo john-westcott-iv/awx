@@ -63,7 +63,7 @@ def test_type_warning(collection_import, silence_warning):
 
 def test_duplicate_config(collection_import, silence_warning):
     # imports done here because of PATH issues unique to this test suite
-    TowerModule = collection_import('plugins.module_utils.tower_api').TowerModule
+    TowerModule = collection_import('plugins.module_utils.tower_module').TowerModule
     data = {
         'name': 'zigzoom',
         'zig': 'zoom',

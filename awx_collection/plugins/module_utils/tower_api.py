@@ -445,11 +445,11 @@ class TowerAPIModule(TowerModule):
         """
         if isinstance(obj, dict):
             for val in obj.values():
-                if TowerModule.has_encrypted_values(val):
+                if TowerAPIModule.has_encrypted_values(val):
                     return True
         elif isinstance(obj, list):
             for val in obj:
-                if TowerModule.has_encrypted_values(val):
+                if TowerAPIModule.has_encrypted_values(val):
                     return True
         elif obj == TowerModule.ENCRYPTED_STRING:
             return True
