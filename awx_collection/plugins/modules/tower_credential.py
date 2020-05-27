@@ -274,7 +274,7 @@ EXAMPLES = '''
 
 '''
 
-from ..module_utils.tower_api import TowerModule
+from ..module_utils.tower_api import TowerAPIModule
 
 KIND_CHOICES = {
     'ssh': 'Machine',
@@ -341,7 +341,7 @@ def main():
     )
 
     # Create a module for ourselves
-    module = TowerModule(argument_spec=argument_spec, required_one_of=[['kind', 'credential_type']])
+    module = TowerAPIModule(argument_spec=argument_spec, required_one_of=[['kind', 'credential_type']])
 
     # Extract our parameters
     name = module.params.get('name')
