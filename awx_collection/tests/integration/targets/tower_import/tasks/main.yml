@@ -1,0 +1,63 @@
+---
+- name: Generate a random string for test
+  set_fact:
+    test_id: "{{ lookup('password', '/dev/null chars=ascii_letters length=16') }}"
+  when: test_id is not defined
+
+- name: Generate names
+  set_fact:
+    org: "AWX-Collection-tests-tower_export-organization1-{{ test_id }}"
+
+- name: Set asset data
+  set_fact:
+    good_assets:
+      organizations:
+        - name: "{{ org }}"
+          description: ""
+          max_hosts: 0
+          natural_key:
+            name": "{{ org }}"
+            type: "organization"
+    bad_assets:
+      organizations:
+        - name: "{{ org }}"
+          description: ""
+          max_hosts: 0
+          custom_virtualenv: "DNE"
+          natural_key:
+            name": "{{ org }}"
+            type: "organization"
+
+- name: Make sure organization does not exist
+  tower_organization:
+    name: "{{ org }}"
+    state: absent
+
+- name: Import an organization
+  tower_import:
+    assets: "{{ good_assets }}"
+  register: results
+
+- assert:
+    that:
+      - results is changed
+
+- name: Delete the imported asset (this will validate its there)
+  tower_organization:
+    name: "{{ org }}"
+    state: absent
+  register: results
+
+- assert:
+    that:
+      - results is changed
+
+- name: Try to import a bad asset
+  tower_import:
+    assets: "{{ bad_assets }}"
+  register: results
+  ignore_errors: True
+
+- assert:
+    that:
+      - results is failed

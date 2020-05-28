@@ -1,0 +1,54 @@
+---
+- name: Generate a random string for test
+  set_fact:
+    test_id: "{{ lookup('password', '/dev/null chars=ascii_letters length=16') }}"
+  when: test_id is not defined
+
+- name: Generate names
+  set_fact:
+    org1: "AWX-Collection-tests-tower_export-organization1-{{ test_id }}"
+    org2: "AWX-Collection-tests-tower_export-organization2-{{ test_id }}"
+
+- name: Create organizations
+  tower_organization:
+    name: "{{ item }}"
+  loop:
+    - "{{ org1 }}"
+    - "{{ org2 }}"
+
+- block:
+    - name: Export something that does not exist
+      tower_export:
+        organizations: "DNE"
+      register: results
+
+    - assert:
+        that:
+          - results['assets']['organizations'] | length() == 0
+
+    - name: Export org1
+      tower_export:
+        organizations: "{{ org1 }}"
+      register: results
+
+    - assert:
+        that:
+          - results['assets']['organizations'] | length() == 1
+
+    - name: Export all orgs
+      tower_export:
+        organizations: 'all'
+      register: results
+
+    - assert:
+        that:
+          - results['assets']['organizations'] | length() >= 2
+
+  always:
+    - name: Cleanup organizations
+      tower_organization:
+        name: "{{ item }}"
+        state: absent
+      loop:
+        - "{{ org1 }}"
+        - "{{ org2 }}"

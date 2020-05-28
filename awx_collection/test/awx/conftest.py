@@ -10,7 +10,7 @@ from contextlib import redirect_stdout, suppress
 from unittest import mock
 import logging
 
-from requests.models import Response
+from requests.models import Response, PreparedRequest
 
 import pytest
 
@@ -22,6 +22,12 @@ try:
     HAS_TOWER_CLI = True
 except ImportError:
     HAS_TOWER_CLI = False
+
+try:
+    import awxkit
+    HAS_AWX_KIT = True
+except ImportError:
+    HAS_AWX_KIT = False
 
 
 logger = logging.getLogger('awx.main.tests')
@@ -119,6 +125,19 @@ def run_module(request, collection_import):
 
             return resp
 
+        def new_awx_request(self, relative_endpoint, method='get', json=None, data=None, query_parameters=None, headers=None):
+            new_kwargs = {}
+            if data:
+                new_kwargs['data'] = data
+            if query_parameters:
+                new_kwargs['params'] = query_parameters
+            if json:
+                new_kwargs['json'] = json
+            response = new_request(self, method, relative_endpoint, **new_kwargs)
+            response.request = PreparedRequest()
+            response.request.prepare(method=method, url='https://localhost/{}'.format(relative_endpoint))
+            return response
+
         def new_open(self, method, url, **kwargs):
             r = new_request(self, method, url, **kwargs)
             m = mock.MagicMock(read=mock.MagicMock(return_value=r._content),
@@ -142,11 +161,20 @@ def run_module(request, collection_import):
         def mock_load_params(self):
             self.params = module_params
 
-        with mock.patch.object(resource_module.TowerAPIModule, '_load_params', new=mock_load_params):
+        if getattr(resource_module, 'TowerAWXKitModule'):
+            resource_class = resource_module.TowerAWXKitModule
+        elif getattr(resource_modeule, 'TowerAPIModule'):
+            resource_class = resource_module.TowerAPIModule
+        else:
+            raise("The module has neither a TowerAWXKitModule or a TowerAPIModule")
+
+        with mock.patch.object(resource_class, '_load_params', new=mock_load_params):
             # Call the test utility (like a mock server) instead of issuing HTTP requests
             with mock.patch('ansible.module_utils.urls.Request.open', new=new_open):
                 if HAS_TOWER_CLI:
                     tower_cli_mgr = mock.patch('tower_cli.api.Session.request', new=new_request)
+                elif HAS_AWX_KIT:
+                    tower_cli_mgr = mock.patch('awxkit.api.client.Connection.request', new=new_awx_request)
                 else:
                     tower_cli_mgr = suppress()
                 with tower_cli_mgr:
