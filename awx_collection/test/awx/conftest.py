@@ -96,7 +96,8 @@ def run_module(request, collection_import):
             if 'params' in kwargs and method == 'GET':
                 # query params for GET are handled a bit differently by
                 # tower-cli and python requests as opposed to REST framework APIRequestFactory
-                kwargs_copy.setdefault('data', {})
+                if not kwargs_copy.get('data'):
+                    kwargs_copy['data'] = {}
                 if isinstance(kwargs['params'], dict):
                     kwargs_copy['data'].update(kwargs['params'])
                 elif isinstance(kwargs['params'], list):
@@ -123,20 +124,10 @@ def run_module(request, collection_import):
                     request_user.username, resp.status_code
                 )
 
-            return resp
+            resp.request = PreparedRequest()
+            resp.request.prepare(method=method, url=url)
 
-        def new_awx_request(self, relative_endpoint, method='get', json=None, data=None, query_parameters=None, headers=None):
-            new_kwargs = {}
-            if data:
-                new_kwargs['data'] = data
-            if query_parameters:
-                new_kwargs['params'] = query_parameters
-            if json:
-                new_kwargs['json'] = json
-            response = new_request(self, method, relative_endpoint, **new_kwargs)
-            response.request = PreparedRequest()
-            response.request.prepare(method=method, url='https://localhost/{}'.format(relative_endpoint))
-            return response
+            return resp
 
         def new_open(self, method, url, **kwargs):
             r = new_request(self, method, url, **kwargs)
@@ -174,7 +165,7 @@ def run_module(request, collection_import):
                 if HAS_TOWER_CLI:
                     tower_cli_mgr = mock.patch('tower_cli.api.Session.request', new=new_request)
                 elif HAS_AWX_KIT:
-                    tower_cli_mgr = mock.patch('awxkit.api.client.Connection.request', new=new_awx_request)
+                    tower_cli_mgr = mock.patch('awxkit.api.client.requests.Session.request', new=new_request)
                 else:
                     tower_cli_mgr = suppress()
                 with tower_cli_mgr:
