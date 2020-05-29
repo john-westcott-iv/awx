@@ -65,11 +65,6 @@ def main():
     if not HAS_EXPORTABLE_RESOURCES:
         module.fail_json(msg="Your version of awxkit does not appear to have import/export")
 
-    # Currently the import process does not return a changed or not.
-    # And we can't tell if an exception comes in before anything is changed or after
-    # So, from an idempotency perspective, we can only assume that we have changed someting
-    module.json_output['changed'] = True
-
     # Currently the import process does not return anything on error
     # It simply just logs to pythons logger
     # Setup a log gobbler to get error messages from import_assets
@@ -83,7 +78,7 @@ def main():
 
     # Run the import process
     try:
-        module.get_api_v2_object().import_assets(assets)
+        module.json_output['changed'] = module.get_api_v2_object().import_assets(assets)
     except Exception as e:
         module.fail_json(msg="Failed to import assets {0}".format(e))
     finally:
