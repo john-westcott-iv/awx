@@ -222,6 +222,7 @@ class BaseTask(object):
         """
         private_data = self.build_private_data(instance, private_data_dir)
         private_data_files = {'credentials': {}}
+        ssh_key_data = None
         if private_data is not None:
             for credential, data in private_data.get('credentials', {}).items():
                 # OpenSSH formatted keys must have a trailing newline to be
@@ -231,14 +232,7 @@ class BaseTask(object):
                 # For credentials used with ssh-add, write to a named pipe which
                 # will be read then closed, instead of leaving the SSH key on disk.
                 if credential and credential.credential_type.namespace in ('ssh', 'scm'):
-                    try:
-                        os.mkdir(os.path.join(private_data_dir, 'env'))
-                    except OSError as e:
-                        if e.errno != errno.EEXIST:
-                            raise
-                    path = os.path.join(private_data_dir, 'env', 'ssh_key')
-                    ansible_runner.utils.open_fifo_write(path, data.encode())
-                    private_data_files['credentials']['ssh'] = path
+                    ssh_key_data = data
                 # Ansible network modules do not yet support ssh-agent.
                 # Instead, ssh private key file is explicitly passed via an
                 # env variable.
@@ -248,7 +242,7 @@ class BaseTask(object):
                     f.write(data)
                     f.close()
                     os.chmod(path, stat.S_IRUSR | stat.S_IWUSR)
-                private_data_files['credentials'][credential] = path
+                    private_data_files['credentials'][credential] = path
             for credential, data in private_data.get('certificates', {}).items():
                 artifact_dir = os.path.join(private_data_dir, 'artifacts', str(self.instance.id))
                 if not os.path.exists(artifact_dir):
@@ -258,7 +252,7 @@ class BaseTask(object):
                     f.write(data)
                     f.close()
                 os.chmod(path, stat.S_IRUSR | stat.S_IWUSR)
-        return private_data_files
+        return private_data_files, ssh_key_data
 
     def build_passwords(self, instance, runtime_passwords):
         """
@@ -477,7 +471,7 @@ class BaseTask(object):
                 )
 
             # May have to serialize the value
-            private_data_files = self.build_private_data_files(self.instance, private_data_dir)
+            private_data_files, ssh_key_data = self.build_private_data_files(self.instance, private_data_dir)
             passwords = self.build_passwords(self.instance, kwargs)
             self.build_extra_vars_file(self.instance, private_data_dir)
             args = self.build_args(self.instance, private_data_dir, passwords)
@@ -520,6 +514,8 @@ class BaseTask(object):
                     'suppress_output_file': True,
                 },
             }
+            if ssh_key_data is not None:
+                params['ssh_key'] = ssh_key_data
 
             idle_timeout = getattr(settings, 'DEFAULT_JOB_IDLE_TIMEOUT', 0)
             if idle_timeout > 0:
