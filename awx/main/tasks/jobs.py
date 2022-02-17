@@ -512,6 +512,7 @@ class BaseTask(object):
                 'playbook': self.build_playbook_path_relative_to_cwd(self.instance, private_data_dir),
                 'inventory': self.build_inventory(self.instance, private_data_dir),
                 'passwords': expect_passwords,
+                'store_env': False,
                 'envvars': env,
                 'settings': {
                     'job_timeout': self.get_instance_timeout(self.instance),
