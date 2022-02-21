@@ -537,7 +537,7 @@ class BaseTask(object):
             runner_settings = {
                 'job_timeout': self.get_instance_timeout(self.instance),
                 'suppress_ansible_output': True,
-                'suppress_output_file': True,
+                'suppress_output_file': getattr(settings, 'AWX_RUNNER_SUPPRESS_OUTPUT_FILE', True),
             }
 
             idle_timeout = getattr(settings, 'DEFAULT_JOB_IDLE_TIMEOUT', 0)
