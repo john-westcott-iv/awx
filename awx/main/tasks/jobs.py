@@ -506,20 +506,12 @@ class BaseTask(object):
                 'playbook': self.build_playbook_path_relative_to_cwd(self.instance, private_data_dir),
                 'inventory': self.build_inventory(self.instance, private_data_dir),
                 'passwords': expect_passwords,
-                'store_env': False,
+                'suppress_env_files': getattr(settings, 'AWX_RUNNER_OMIT_ENV_FILES', True),
                 'envvars': env,
-                'settings': {
-                    'job_timeout': self.get_instance_timeout(self.instance),
-                    'suppress_ansible_output': True,
-                    'suppress_output_file': True,
-                },
             }
+
             if ssh_key_data is not None:
                 params['ssh_key'] = ssh_key_data
-
-            idle_timeout = getattr(settings, 'DEFAULT_JOB_IDLE_TIMEOUT', 0)
-            if idle_timeout > 0:
-                params['settings']['idle_timeout'] = idle_timeout
 
             if isinstance(self.instance, AdHocCommand):
                 params['module'] = self.build_module_name(self.instance)
@@ -541,6 +533,21 @@ class BaseTask(object):
             for v in ['passwords', 'playbook', 'inventory']:
                 if not params[v]:
                     del params[v]
+
+            runner_settings = {
+                'job_timeout': self.get_instance_timeout(self.instance),
+                'suppress_ansible_output': True,
+                'suppress_output_file': True,
+            }
+
+            idle_timeout = getattr(settings, 'DEFAULT_JOB_IDLE_TIMEOUT', 0)
+            if idle_timeout > 0:
+                runner_settings['idle_timeout'] = idle_timeout
+
+            # Write out out own settings file
+            env_path = os.path.join(private_data_dir, 'env', 'settings')
+            with open(env_path, 'w') as f:
+                f.write(json.dumps(runner_settings))
 
             self.instance.log_lifecycle("running_playbook")
             if isinstance(self.instance, SystemJob):
