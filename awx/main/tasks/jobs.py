@@ -119,6 +119,19 @@ class BaseTask(object):
     def update_model(self, pk, _attempt=0, **updates):
         return update_model(self.model, pk, _attempt=0, _max_attempts=self.update_attempts, **updates)
 
+    def write_private_data_file(self, private_data_dir, file_name, data, sub_dir=None, permissions=0o600):
+        base_path = private_data_dir
+        if sub_dir:
+            base_path = os.path.join(private_data_dir, sub_dir)
+            if not os.path.exists(base_path):
+                os.mkdir(base_path, 0o700)
+
+        file_path = os.path.join(base_path, file_name)
+        with open(file_path, 'w') as f:
+            f.write(data)
+        os.chmod(file_path, permissions)
+        return file_path
+
     def get_path_to(self, *args):
         """
         Return absolute path relative to this file.
@@ -237,21 +250,9 @@ class BaseTask(object):
                 # Instead, ssh private key file is explicitly passed via an
                 # env variable.
                 else:
-                    handle, path = tempfile.mkstemp(dir=os.path.join(private_data_dir, 'env'))
-                    f = os.fdopen(handle, 'w')
-                    f.write(data)
-                    f.close()
-                    os.chmod(path, stat.S_IRUSR | stat.S_IWUSR)
-                    private_data_files['credentials'][credential] = path
+                    private_data_files['credentials'][credential] = self.write_private_data_file(private_data_dir, 'extravars', data, 'env')
             for credential, data in private_data.get('certificates', {}).items():
-                artifact_dir = os.path.join(private_data_dir, 'artifacts', str(self.instance.id))
-                if not os.path.exists(artifact_dir):
-                    os.makedirs(artifact_dir, mode=0o700)
-                path = os.path.join(artifact_dir, 'ssh_key_data-cert.pub')
-                with open(path, 'w') as f:
-                    f.write(data)
-                    f.close()
-                os.chmod(path, stat.S_IRUSR | stat.S_IWUSR)
+                self.write_private_data_file(private_data_dir, 'ssh_key_data-cert.pub', data, 'artifacts')
         return private_data_files, ssh_key_data
 
     def build_passwords(self, instance, runtime_passwords):
@@ -270,23 +271,11 @@ class BaseTask(object):
         """
 
     def _write_extra_vars_file(self, private_data_dir, vars, safe_dict={}):
-        env_path = os.path.join(private_data_dir, 'env')
-        try:
-            os.mkdir(env_path, stat.S_IREAD | stat.S_IWRITE | stat.S_IEXEC)
-        except OSError as e:
-            if e.errno != errno.EEXIST:
-                raise
-
-        path = os.path.join(env_path, 'extravars')
-        handle = os.open(path, os.O_RDWR | os.O_CREAT, stat.S_IREAD | stat.S_IWRITE)
-        f = os.fdopen(handle, 'w')
         if settings.ALLOW_JINJA_IN_EXTRA_VARS == 'always':
-            f.write(yaml.safe_dump(vars))
+            content = yaml.safe_dump(vars)
         else:
-            f.write(safe_dump(vars, safe_dict))
-        f.close()
-        os.chmod(path, stat.S_IRUSR)
-        return path
+            content = safe_dump(vars, safe_dict)
+        return self.write_private_data_file(private_data_dir, 'extravars', content, 'env')
 
     def add_awx_venv(self, env):
         env['VIRTUAL_ENV'] = settings.AWX_VENV_PATH
@@ -324,32 +313,14 @@ class BaseTask(object):
         # maintain a list of host_name --> host_id
         # so we can associate emitted events to Host objects
         self.runner_callback.host_map = {hostname: hv.pop('remote_tower_id', '') for hostname, hv in script_data.get('_meta', {}).get('hostvars', {}).items()}
-        json_data = json.dumps(script_data)
-        path = os.path.join(private_data_dir, 'inventory')
-        fn = os.path.join(path, 'hosts')
-        with open(fn, 'w') as f:
-            os.chmod(fn, stat.S_IRUSR | stat.S_IXUSR | stat.S_IWUSR)
-            f.write('#! /usr/bin/env python3\n# -*- coding: utf-8 -*-\nprint(%r)\n' % json_data)
-        return fn
+        file_content = '#! /usr/bin/env python3\n# -*- coding: utf-8 -*-\nprint(%r)\n' % json.dumps(script_data)
+        return self.write_private_data_file(private_data_dir, 'hosts', file_content, 'inventory', 0o700)
 
     def build_args(self, instance, private_data_dir, passwords):
         raise NotImplementedError
 
     def write_args_file(self, private_data_dir, args):
-        env_path = os.path.join(private_data_dir, 'env')
-        try:
-            os.mkdir(env_path, stat.S_IREAD | stat.S_IWRITE | stat.S_IEXEC)
-        except OSError as e:
-            if e.errno != errno.EEXIST:
-                raise
-
-        path = os.path.join(env_path, 'cmdline')
-        handle = os.open(path, os.O_RDWR | os.O_CREAT, stat.S_IREAD | stat.S_IWRITE)
-        f = os.fdopen(handle, 'w')
-        f.write(ansible_runner.utils.args2cmdline(*args))
-        f.close()
-        os.chmod(path, stat.S_IRUSR)
-        return path
+        return self.write_private_data_file(private_data_dir, 'cmdline', ansible_runner.utils.args2cmdline(*args), 'env')
 
     def build_credentials_list(self, instance):
         return []
@@ -544,10 +515,8 @@ class BaseTask(object):
             if idle_timeout > 0:
                 runner_settings['idle_timeout'] = idle_timeout
 
-            # Write out out own settings file
-            env_path = os.path.join(private_data_dir, 'env', 'settings')
-            with open(env_path, 'w') as f:
-                f.write(json.dumps(runner_settings))
+            # Write out our own settings file
+            self.write_private_data_file(private_data_dir, 'settings', json.dumps(runner_settings), 'env')
 
             self.instance.log_lifecycle("running_playbook")
             if isinstance(self.instance, SystemJob):
@@ -1573,13 +1542,7 @@ class RunInventoryUpdate(BaseTask):
         return env
 
     def write_args_file(self, private_data_dir, args):
-        path = os.path.join(private_data_dir, 'args')
-        handle = os.open(path, os.O_RDWR | os.O_CREAT, stat.S_IREAD | stat.S_IWRITE)
-        f = os.fdopen(handle, 'w')
-        f.write(' '.join(args))
-        f.close()
-        os.chmod(path, stat.S_IRUSR)
-        return path
+        return self.write_private_data_file(private_data_dir, 'args', ' '.join(args))
 
     def build_args(self, inventory_update, private_data_dir, passwords):
         """Build the command line argument list for running an inventory
@@ -1635,12 +1598,7 @@ class RunInventoryUpdate(BaseTask):
         if injector is not None:
             content = injector.inventory_contents(inventory_update, private_data_dir)
             # must be a statically named file
-            inventory_path = os.path.join(private_data_dir, 'inventory', injector.filename)
-            with open(inventory_path, 'w') as f:
-                f.write(content)
-            os.chmod(inventory_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
-
-            rel_path = os.path.join('inventory', injector.filename)
+            rel_path = self.write_private_data_file(private_data_dir, injector.filename, content, 'inventory', 0o700)
         elif src == 'scm':
             rel_path = os.path.join('project', inventory_update.source_path)
 
@@ -1966,13 +1924,7 @@ class RunSystemJob(BaseTask):
         return args
 
     def write_args_file(self, private_data_dir, args):
-        path = os.path.join(private_data_dir, 'args')
-        handle = os.open(path, os.O_RDWR | os.O_CREAT, stat.S_IREAD | stat.S_IWRITE)
-        f = os.fdopen(handle, 'w')
-        f.write(' '.join(args))
-        f.close()
-        os.chmod(path, stat.S_IRUSR)
-        return path
+        return self.write_private_data_file(private_data_dir, 'args', ' '.join(args))
 
     def build_env(self, instance, private_data_dir, private_data_files=None):
         base_env = super(RunSystemJob, self).build_env(instance, private_data_dir, private_data_files=private_data_files)
