@@ -32,15 +32,16 @@ from gitdb.exc import BadName as BadGitName
 
 
 # AWX
-from awx.main.constants import ACTIVE_STATES
 from awx.main.dispatch.publish import task
 from awx.main.dispatch import get_local_queuename
 from awx.main.constants import (
+    ACTIVE_STATES,
     PRIVILEGE_ESCALATION_METHODS,
     STANDARD_INVENTORY_UPDATE_ENV,
     JOB_FOLDER_PREFIX,
     MAX_ISOLATED_PATH_COLON_DELIMITER,
     CONTAINER_VOLUMES_MOUNT_TYPES,
+    ANSIBLE_RUNNER_NEEDS_UPDATE_MESSAGE,
 )
 from awx.main.models import (
     Instance,
@@ -568,6 +569,10 @@ class BaseTask(object):
                     extra_update_fields['result_traceback'] = exc.tb
         except Exception:
             logger.exception('{} Post run hook errored.'.format(self.instance.log_format))
+
+        # We really shouldn't get into this one but just in case....
+        if 'got an unexpected keyword argument' in extra_update_fields.get('result_traceback', ''):
+            extra_update_fields['result_traceback'] = "{}\n\n{}".format(extra_update_fields['result_traceback'], ANSIBLE_RUNNER_NEEDS_UPDATE_MESSAGE)
 
         self.instance = self.update_model(pk)
         self.instance = self.update_model(pk, status=status, emitted_events=self.runner_callback.event_ct, **extra_update_fields)
