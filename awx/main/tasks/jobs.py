@@ -1603,7 +1603,8 @@ class RunInventoryUpdate(BaseTask):
         if injector is not None:
             content = injector.inventory_contents(inventory_update, private_data_dir)
             # must be a statically named file
-            rel_path = self.write_private_data_file(private_data_dir, injector.filename, content, 'inventory', 0o700)
+            self.write_private_data_file(private_data_dir, injector.filename, content, 'inventory', 0o700)
+            rel_path = os.path.join('inventory', injector.filename)
         elif src == 'scm':
             rel_path = os.path.join('project', inventory_update.source_path)
 
