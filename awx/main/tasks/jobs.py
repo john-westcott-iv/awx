@@ -127,7 +127,13 @@ class BaseTask(object):
             if not os.path.exists(base_path):
                 os.mkdir(base_path, 0o700)
 
-        file_path = os.path.join(base_path, file_name)
+        # If we got a file name create it, otherwise we want a temp file
+        if file_name:
+            file_path = os.path.join(base_path, file_name)
+        else:
+            handle, file_path = tempfile.mkstemp(dir=base_path)
+            os.close(handle)
+
         with open(file_path, 'w') as f:
             f.write(data)
         os.chmod(file_path, permissions)
@@ -251,7 +257,7 @@ class BaseTask(object):
                 # Instead, ssh private key file is explicitly passed via an
                 # env variable.
                 else:
-                    private_data_files['credentials'][credential] = self.write_private_data_file(private_data_dir, 'extravars', data, 'env')
+                    private_data_files['credentials'][credential] = self.write_private_data_file(private_data_dir, None, data, 'env')
             for credential, data in private_data.get('certificates', {}).items():
                 self.write_private_data_file(private_data_dir, 'ssh_key_data-cert.pub', data, 'artifacts')
         return private_data_files, ssh_key_data
