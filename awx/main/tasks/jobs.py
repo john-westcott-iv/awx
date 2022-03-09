@@ -17,7 +17,6 @@ import time
 import urllib.parse as urlparse
 from uuid import uuid4
 
-
 # Django
 from django.conf import settings
 from django.db import transaction
@@ -134,9 +133,10 @@ class BaseTask(object):
             handle, file_path = tempfile.mkstemp(dir=base_path)
             os.close(handle)
 
+        file = Path(file_path)
+        file.touch(mode=permissions, exist_ok=True)
         with open(file_path, 'w') as f:
             f.write(data)
-        os.chmod(file_path, permissions)
         return file_path
 
     def get_path_to(self, *args):
