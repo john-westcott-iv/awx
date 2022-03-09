@@ -150,9 +150,12 @@ def read_content(private_data_dir, raw_env, inventory_update):
                 referenced_paths.add(target_path)
                 dir_contents[abs_file_path] = file_content.replace(target_path, '{{ ' + other_alias + ' }}')
 
+    # The env/settings file should be ignored, nothing needs to reference it as its picked up directly from runner
+    ignore_files = [os.path.join(private_data_dir, 'env', 'settings')]
+
     # build dict content which is the directory contents keyed off the file aliases
     content = {}
-    for abs_file_path, file_content in dir_contents.items():
+    for abs_file_path, file_content in dir_contents.items() and abs_file_path not in ignore_files:
         # assert that all files laid down are used
         if abs_file_path not in referenced_paths:
             raise AssertionError(
