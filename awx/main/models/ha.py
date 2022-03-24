@@ -179,15 +179,20 @@ class Instance(HasPolicyEditsMixin, BaseModel):
             Instance.objects.filter(enabled=True, capacity__gt=0).filter(node_type__in=['control', 'hybrid']).values_list('hostname', flat=True)
         )
 
-    def get_cleanup_task_kwargs(self, **kwargs):
+    def get_cleanup_task_kwargs(self, controller_node=True, **kwargs):
         """
         Produce options to use for the command: ansible-runner worker cleanup
         returns a dict that is passed to the python interface for the runner method corresponding to that command
         any kwargs will override that key=value combination in the returned dict
         """
+        if controller_node:
+            tempdir = settings.AWX_ISOLATION_BASE_PATH
+        else:
+            tempdir = setting.AWX_RECEPTOR_DATADIR
+
         vargs = dict()
         if settings.AWX_CLEANUP_PATHS:
-            vargs['file_pattern'] = '{}/{}*'.format(settings.AWX_ISOLATION_BASE_PATH, JOB_FOLDER_PREFIX % '*')
+            vargs['file_pattern'] = '{}/{}*'.format(tempdir, JOB_FOLDER_PREFIX % '*')
         vargs.update(kwargs)
         if 'exclude_strings' not in vargs and vargs.get('file_pattern'):
             active_pks = list(UnifiedJob.objects.filter(execution_node=self.hostname, status__in=('running', 'waiting')).values_list('pk', flat=True))

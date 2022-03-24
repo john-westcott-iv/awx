@@ -455,7 +455,7 @@ def _cleanup_images_and_files(**kwargs):
     if settings.IS_K8S:
         return
     this_inst = Instance.objects.me()
-    runner_cleanup_kwargs = this_inst.get_cleanup_task_kwargs(**kwargs)
+    runner_cleanup_kwargs = this_inst.get_cleanup_task_kwargs(True, **kwargs)
     if runner_cleanup_kwargs:
         stdout = ''
         with StringIO() as buffer:
@@ -469,7 +469,7 @@ def _cleanup_images_and_files(**kwargs):
     checker_instance = Instance.objects.filter(node_type__in=['hybrid', 'control'], enabled=True, capacity__gt=0).order_by('-hostname').first()
     if checker_instance and this_inst.hostname == checker_instance.hostname:
         for inst in Instance.objects.filter(node_type='execution', enabled=True, capacity__gt=0):
-            runner_cleanup_kwargs = inst.get_cleanup_task_kwargs(**kwargs)
+            runner_cleanup_kwargs = inst.get_cleanup_task_kwargs(False, **kwargs)
             if not runner_cleanup_kwargs:
                 continue
             try:
