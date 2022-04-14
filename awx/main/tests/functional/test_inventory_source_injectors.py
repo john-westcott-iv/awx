@@ -155,9 +155,9 @@ def read_content(private_data_dir, raw_env, inventory_update):
 
     # build dict content which is the directory contents keyed off the file aliases
     content = {}
-    for abs_file_path, file_content in dir_contents.items() and abs_file_path not in ignore_files:
+    for abs_file_path, file_content in dir_contents.items():
         # assert that all files laid down are used
-        if abs_file_path not in referenced_paths:
+        if abs_file_path not in referenced_paths and abs_file_path not in ignore_files:
             raise AssertionError(
                 "File {} is not referenced. References and files:\n{}\n{}".format(abs_file_path, json.dumps(env, indent=4), json.dumps(dir_contents, indent=4))
             )
