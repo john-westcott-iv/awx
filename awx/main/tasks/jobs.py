@@ -115,6 +115,9 @@ class BaseTask(object):
         self.update_attempts = int(settings.DISPATCHER_DB_DOWNTOWN_TOLLERANCE / 5)
         self.runner_callback = self.callback_class(model=self.model)
 
+    def get_additional_event_data(self):
+        return None
+
     def update_model(self, pk, _attempt=0, **updates):
         return update_model(self.model, pk, _attempt=0, _max_attempts=self.update_attempts, **updates)
 
@@ -460,6 +463,8 @@ class BaseTask(object):
             if self.instance.spawned_by_workflow:
                 self.runner_callback.parent_workflow_job_id = self.instance.get_workflow_job().id
 
+            self.runner_callback.emitted_event_additional_data = self.get_additional_event_data()
+
             self.runner_callback.job_created = str(self.instance.created)
 
             credentials = self.build_credentials_list(self.instance)
@@ -596,6 +601,40 @@ class RunJob(BaseTask):
 
     model = Job
     event_model = JobEvent
+
+    # These could be set on any class that wants to allow extensions with additional data
+    def get_additional_event_data(self):
+        return_value = None
+        if True or getattr(settings, 'AWX_EVENT_DATA_ADDITIONAL'):
+            # This would be an example of the configurable setting by the user
+            attrs = [
+                'organization.id',
+                'organization.description',
+                'organization.name',
+                'created_by.username',
+                'labels.count',
+                'job_env.AWX_ISOLATED_DATA_DIR',  # Note, on this one its not valid until after the job runs so this will return the does not exist
+                'labels.junk',
+                'junk.more_junk',
+            ]
+            # We will have to further consider how we would handle if something is an array?
+            # Could someone do credentials[0]['name']? Or maybe credentials[*]['name']?
+            return_value = {}
+            for attribute in attrs:
+                value = self.instance
+                for sub_attr in attribute.split('.'):
+                    if hasattr(value, sub_attr):
+                        value = getattr(value, sub_attr)
+                    else:
+                        value = '{} from {} does not exist'.format(sub_attr, attribute)
+                        break
+
+                if callable(value):
+                    return_value[attribute] = value()
+                else:
+                    return_value[attribute] = value
+
+        return return_value
 
     def build_private_data(self, job, private_data_dir):
         """

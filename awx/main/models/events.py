@@ -440,9 +440,13 @@ class BasePlaybookEvent(CreatedModifiedModel):
 
         sanitize_event_keys(kwargs, cls.VALID_KEYS)
         workflow_job_id = kwargs.pop('workflow_job_id', None)
+        additional_data = kwargs.pop('additional_data', None)
         event = cls(**kwargs)
         if workflow_job_id:
             setattr(event, 'workflow_job_id', workflow_job_id)
+        # Extract user defined additional data
+        if additional_data:
+            setattr(event, 'additional_data', additional_data)
         # shouldn't job_created _always_ be present?
         # if it's not, how could we save the event to the db?
         job_created = kwargs.pop('job_created', None)
@@ -462,7 +466,7 @@ class JobEvent(BasePlaybookEvent):
     An event/message logged from the callback when running a job.
     """
 
-    VALID_KEYS = BasePlaybookEvent.VALID_KEYS + ['job_id', 'workflow_job_id', 'job_created']
+    VALID_KEYS = BasePlaybookEvent.VALID_KEYS + ['job_id', 'workflow_job_id', 'additional_data', 'job_created']
     JOB_REFERENCE = 'job_id'
 
     objects = DeferJobCreatedManager()
@@ -593,7 +597,7 @@ UnpartitionedJobEvent._meta.db_table = '_unpartitioned_' + JobEvent._meta.db_tab
 
 class ProjectUpdateEvent(BasePlaybookEvent):
 
-    VALID_KEYS = BasePlaybookEvent.VALID_KEYS + ['project_update_id', 'workflow_job_id', 'job_created']
+    VALID_KEYS = BasePlaybookEvent.VALID_KEYS + ['project_update_id', 'workflow_job_id', 'additional_data', 'job_created']
     JOB_REFERENCE = 'project_update_id'
 
     objects = DeferJobCreatedManager()
@@ -709,6 +713,7 @@ class BaseCommandEvent(CreatedModifiedModel):
 
         sanitize_event_keys(kwargs, cls.VALID_KEYS)
         kwargs.pop('workflow_job_id', None)
+        kwargs.pop('additional_data', {})
         event = cls(**kwargs)
         event._update_from_event_data()
         return event
@@ -731,7 +736,7 @@ class BaseCommandEvent(CreatedModifiedModel):
 
 class AdHocCommandEvent(BaseCommandEvent):
 
-    VALID_KEYS = BaseCommandEvent.VALID_KEYS + ['ad_hoc_command_id', 'event', 'host_name', 'host_id', 'workflow_job_id', 'job_created']
+    VALID_KEYS = BaseCommandEvent.VALID_KEYS + ['ad_hoc_command_id', 'event', 'host_name', 'host_id', 'workflow_job_id', 'additional_data', 'job_created']
     WRAPUP_EVENT = 'playbook_on_stats'  # exception to BaseCommandEvent
     JOB_REFERENCE = 'ad_hoc_command_id'
 
@@ -833,7 +838,7 @@ UnpartitionedAdHocCommandEvent._meta.db_table = '_unpartitioned_' + AdHocCommand
 
 class InventoryUpdateEvent(BaseCommandEvent):
 
-    VALID_KEYS = BaseCommandEvent.VALID_KEYS + ['inventory_update_id', 'workflow_job_id', 'job_created']
+    VALID_KEYS = BaseCommandEvent.VALID_KEYS + ['inventory_update_id', 'workflow_job_id', 'additional_data', 'job_created']
     JOB_REFERENCE = 'inventory_update_id'
 
     objects = DeferJobCreatedManager()

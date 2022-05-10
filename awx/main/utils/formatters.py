@@ -198,6 +198,9 @@ class LogstashFormatter(LogstashFormatterBase):
             if hasattr(job_event, 'workflow_job_id'):
                 data_for_log['workflow_job_id'] = job_event.workflow_job_id
 
+            if hasattr(job_event, 'additional_data'):
+                data_for_log['additional_data'] = job_event.additional_data
+
         elif kind == 'system_tracking':
             data.pop('ansible_python_version', None)
             if 'ansible_python' in data:

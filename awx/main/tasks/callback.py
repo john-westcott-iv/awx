@@ -34,6 +34,7 @@ class RunnerCallback:
         self.update_attempts = int(settings.DISPATCHER_DB_DOWNTOWN_TOLLERANCE / 5)
         self.wrapup_event_dispatched = False
         self.extra_update_fields = {}
+        self.emitted_event_additional_data = None
 
     def update_model(self, pk, _attempt=0, **updates):
         return update_model(self.model, pk, _attempt=0, _max_attempts=self.update_attempts, **updates)
@@ -93,6 +94,8 @@ class RunnerCallback:
                 event_data.pop('parent_uuid', None)
         if self.parent_workflow_job_id:
             event_data['workflow_job_id'] = self.parent_workflow_job_id
+        if self.emitted_event_additional_data:
+            event_data['additional_data'] = self.emitted_event_additional_data
         event_data['job_created'] = self.job_created
         if self.host_map:
             host = event_data.get('event_data', {}).get('host', '').strip()
