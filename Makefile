@@ -587,7 +587,5 @@ print-%:
 	@echo $($*)
 
 check-pr-body:
-	@echo "Running check-pr-body"
-	@echo "URL: ${URL}"
-	@echo "TOKEN: $(TOKEN)"
+	ansible-playbook -i localhost tools/ansible/check_pr.yml -eurl=${URL}
 
