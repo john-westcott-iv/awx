@@ -1,0 +1,38 @@
+---
+name: PR Check
+env:
+  BRANCH: ${{ github.base_ref || 'devel' }}
+on:
+  pull_request:
+jobs:
+  pr-check:
+    name: Check PR for X,Y,Z properties
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+    steps:
+      - name: Write PR body to a file
+        run: |
+          cat >> pr.body << __SOME_RANDOM_PR_EOF__
+          ${{ github.event.pull_request.body }}
+          __SOME_RANDOM_PR_EOF__
+
+      - name: Remove comments from PR body
+        run: cat pr.body | sed 's:#.*::g' > pr.body.no_comments
+
+      # We want to write these out individually just incase the options were joined on a single line
+      - name: Check for each of the lines:
+        run: |
+          grep "Bug or Docs Fix" pr.body.no_comments > Z
+          grep "New or Enhanced Feature" pr.body.no_comments > Y
+          grep "Breaking Change" pr.body.no_comments > X
+
+      - name: Check for exactly one item
+        run: |
+          if [ $(cat X Y Z | wc -l) != 1 ] ; then
+            echo "The PR body must contain exactly one of [ 'Bug or Docs Fix', 'New or Enhanced Feature', 'Breaking Change' ]"
+            exit 255;
+          else
+            exit 0;
+          fi
