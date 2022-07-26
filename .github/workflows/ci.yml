@@ -41,7 +41,7 @@ jobs:
 #            command: make ui-test-general
           - name: validate-pr-body
             label: Validate PR Body
-            command: /start_tests.sh check-pr-body TOKEN='${{ secrets.GITHUB_TOKEN }}' URL=${{ github.event.pull_request.url }}
+            command: /start_tests.sh check-pr-body URL=${{ github.event.pull_request.url }}
     steps:
       - uses: actions/checkout@v2
 
