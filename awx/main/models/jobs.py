@@ -968,18 +968,16 @@ class LaunchTimeConfigBase(BaseModel):
         data = {}
         # Some types may have different prompts, but always subset of JT prompts
         for prompt_name in JobTemplate.get_ask_mapping().keys():
-            try:
+            field = None
+            if prompt_name in self.SUBCLASS_FIELDS:
                 field = self._meta.get_field(prompt_name)
-            except FieldDoesNotExist:
-                field = None
+
             if isinstance(field, models.ManyToManyField):
                 if not self.pk:
                     continue  # unsaved object can't have related many-to-many
-                prompt_val = set(getattr(self, prompt_name).all())
-                if len(prompt_val) > 0:
-                    # We used to return a set but that will cause issues with order for ordered fields (like instance_groups)
-                    # So instead we will return an array of items
-                    data[prompt_name] = [item for item in getattr(self, prompt_name).all()]
+                # We used to return a set but that will cause issues with order for ordered fields (like instance_groups)
+                # So instead we will return an array of items
+                prompt_val = list(getattr(self, prompt_name).all())
             elif prompt_name == 'extra_vars':
                 if self.extra_vars:
                     if display:
