@@ -2,9 +2,17 @@
 sources_dest: '../_sources'
 compose_name: 'docker-compose.yml'
 awx_image: 'ghcr.io/ansible/awx_devel'
-pg_port: 5432
-pg_username: 'awx'
-pg_database: 'awx'
+db_defaults:
+  sqlserver:
+    port: 1433
+    host: sqlserver
+    user: 'sa'
+    db: 'master'
+  postgres:
+    port: 5432
+    host: postgres
+    user: 'awx'
+    db: 'awx'
 control_plane_node_count: 1
 minikube_container_group: false
 receptor_socket_file: /var/run/awx-receptor/receptor.sock

@@ -1,8 +1,8 @@
-DATABASE_USER={{ pg_username|quote }}
-DATABASE_NAME={{ pg_database|quote }}
-DATABASE_HOST={{ pg_hostname|default('postgres')|quote }}
+DATABASE_USER={{ db_username|quote }}
+DATABASE_NAME={{ db_database|quote }}
+DATABASE_HOST={{ db_host|quote }}
 DATABASE_PORT={{ pg_port|default('5432')|quote }}
-DATABASE_PASSWORD={{ pg_password|default('awxpass')|quote }}
+DATABASE_PASSWORD={{ db_password|default('AwxPass123!')|quote }}
 {% if pg_admin_password is defined %}
 DATABASE_ADMIN_PASSWORD={{ pg_admin_password|quote }}
 {% endif %}

@@ -1,5 +1,18 @@
 ---
 
+- name: Fail if we have a bad database option
+  fail:
+    msg: "The database variable must be one of {{ db_defaults.keys() | join(', ') }}"
+  when:
+    - database not in db_defaults.keys()
+
+- name: Select DB variables
+  set_fact:
+    db_port: "{{ db_port | default(db_defaults[database]['port']) }}"
+    db_host: "{{ db_hostname | default(db_defaults[database]['host']) }}"
+    db_username: "{{ db_user | default(db_defaults[database]['user']) }}"
+    db_database: "{{ db_database | default(db_defaults[database]['db']) }}"
+
 - name: Create _sources directories
   file:
     path: "{{ sources_dest }}/{{ item }}"
@@ -15,7 +28,7 @@
   register: secrets
   when: not lookup('vars', item, default='')
   loop:
-    - pg_password
+    - db_password
     - secret_key
     - broadcast_websocket_secret
     - admin_password

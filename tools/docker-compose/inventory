@@ -5,14 +5,14 @@ localhost ansible_connection=local ansible_python_interpreter="/usr/bin/env pyth
 # AWX-Managed Database Settings
 # If left blank, these will be generated upon install.
 # Values are written out to tools/docker-compose/_sources/secrets/
-# pg_password=""
+# db_password=""
 # broadcast_websocket_secret=""
 # secret_key=""
 
 # External Database Settings
 # pg_host=""
-# pg_password=""
-# pg_username=""
+# db_password=""
+# db_username=""
 # pg_hostname=""
 
 # awx_image="ghcr.io/ansible/awx_devel"

@@ -1,11 +1,16 @@
 DATABASES = {
     'default': {
+        'NAME': "{{ db_database }}",
+        'USER': "{{ db_username }}",
+        'PASSWORD': "{{ db_password }}",
+        'PORT': "{{ db_port }}",
+        'HOST': "{{ db_host }}",
         'ATOMIC_REQUESTS': True,
+{% if database == 'postgres' %}
         'ENGINE': 'awx.main.db.profiled_pg',
-        'NAME': "{{ pg_database }}",
-        'USER': "{{ pg_username }}",
-        'PASSWORD': "{{ pg_password }}",
-        'HOST': "{{ pg_hostname | default('postgres') }}",
-        'PORT': "{{ pg_port }}",
+{% elif database == 'sqlserver' %}
+        "ENGINE": "awx.main.db.profiled_mssql",
+        "OPTIONS": {"driver": "ODBC Driver 17 for SQL Server",},
+{% endif %}
     }
 }

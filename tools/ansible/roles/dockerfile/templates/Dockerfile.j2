@@ -237,6 +237,14 @@ ADD tools/docker-compose/awx-manage /usr/local/bin/awx-manage
 ADD tools/scripts/awx-python /usr/bin/awx-python
 {% endif %}
 
+{# SQLServer support #}
+{# From https://learn.microsoft.com/en-us/sql/connect/odbc/linux-mac/installing-the-microsoft-odbc-driver-for-sql-server?view=sql-server-ver16#redhat17 #}
+ADD tools/docker-compose/mssql-release.repo /etc/yum.repos.d/mssql-release.repo
+
+RUN dnf remove -y remove unixODBC-utf16 unixODBC-utf16-devel 2>/dev/null
+RUN ACCEPT_EULA=Y dnf install -y msodbcsql17 mssql-tools 2>/dev/null
+{# end SQLServer support #}
+
 # Pre-create things we need to access
 RUN for dir in \
       /var/lib/awx \

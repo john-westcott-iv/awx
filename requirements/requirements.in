@@ -33,6 +33,7 @@ jinja2
 JSON-log-formatter
 jsonschema
 Markdown  # used for formatting API help
+mssql-django
 openshift
 pexpect==4.7.0 # see library notes
 prometheus_client

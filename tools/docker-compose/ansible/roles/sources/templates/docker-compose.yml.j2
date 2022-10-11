@@ -32,7 +32,7 @@ services:
       MINIKUBE_CONTAINER_GROUP: "true"
 {% endif %}
     links:
-      - postgres
+      - {{ database }}
       - redis_{{ container_postfix }}
     working_dir: "/awx_devel"
     volumes:
@@ -104,10 +104,10 @@ services:
       DB_VENDOR: postgres
       DB_ADDR: postgres
       DB_DATABASE: keycloak
-      DB_USER: {{ pg_username }}
-      DB_PASSWORD: {{ pg_password }}
+      DB_USER: {{ db_username }}
+      DB_PASSWORD: {{ db_password | quote }}
     depends_on:
-      - postgres
+      - {{ database }}
 {% endif %}
 {% if enable_ldap|bool %}
   ldap:
@@ -189,6 +189,7 @@ services:
   #   build:
   #     context: ./docker-compose
   #     dockerfile: Dockerfile-logstash
+{% if database == 'postgres' %}
   postgres:
     image: postgres:12
     container_name: tools_postgres_1
@@ -196,11 +197,27 @@ services:
     command: postgres -c log_destination=stderr -c log_min_messages=info -c log_min_duration_statement={{ pg_log_min_duration_statement|default(1000) }} -c max_connections={{ pg_max_connections|default(1024) }}
     environment:
       POSTGRES_HOST_AUTH_METHOD: trust
-      POSTGRES_USER: {{ pg_username }}
-      POSTGRES_DB: {{ pg_database }}
-      POSTGRES_PASSWORD: {{ pg_password }}
+      POSTGRES_USER: {{ db_username }}
+      POSTGRES_DB: {{ db_database }}
+      POSTGRES_PASSWORD: {{ db_password | quote }}
     volumes:
       - "awx_db:/var/lib/postgresql/data"
+{% elif database == 'sqlserver' %}
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    container_name: tools_sqlserver_1
+    ports:
+      - '1433:1433'
+      - '135:135'
+      - '51000:51000'
+    environment:
+      ACCEPT_EULA: Y
+      SA_PASSWORD: {{ db_password | quote }}
+      MSSQL_RPC_PORT: 135
+      MSSQL_DTC_TCP_PORT: 51000
+    volumes:
+      - "awx_db_sql_server:/var/opt/mssql"
+{% endif %}
 {% if execution_node_count|int > 0 %}
   receptor-hop:
     image: {{ receptor_image }}
@@ -235,8 +252,13 @@ services:
 {% endif %}
 
 volumes:
+{% if database == 'postgres' %}
   awx_db:
     name: tools_awx_db
+{% elif database == 'sqlserver' %}
+  awx_db_sql_server:
+    name: tools_awx_db_sqlserver
+{% endif %}
 {% for i in range(control_plane_node_count|int) -%}
   {% set container_postfix = loop.index %}
   redis_socket_{{ container_postfix }}:
