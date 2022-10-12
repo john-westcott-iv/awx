@@ -144,8 +144,8 @@ class Role(models.Model):
         indexes = [models.Index(fields=["content_type", "object_id"])]
         ordering = ("content_type", "object_id")
 
-    role_field = models.TextField(null=False)
-    singleton_name = models.TextField(null=True, default=None, db_index=True, unique=True)
+    role_field = models.CharField(max_length=256, null=False)
+    singleton_name = models.CharField(max_length=256, null=True, default=None, db_index=True, unique=True)
     parents = models.ManyToManyField('Role', related_name='children')
     implicit_parents = models.TextField(null=False, default='[]')
     ancestors = models.ManyToManyField(
@@ -455,7 +455,7 @@ class RoleAncestorEntry(models.Model):
 
     descendent = models.ForeignKey(Role, null=False, on_delete=models.CASCADE, related_name='+')
     ancestor = models.ForeignKey(Role, null=False, on_delete=models.CASCADE, related_name='+')
-    role_field = models.TextField(null=False)
+    role_field = models.CharField(max_length=256, null=False)
     content_type_id = models.PositiveIntegerField(null=False)
     object_id = models.PositiveIntegerField(null=False)
 
