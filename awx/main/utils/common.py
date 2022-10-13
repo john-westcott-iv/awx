@@ -90,6 +90,7 @@ __all__ = [
     'get_event_partition_epoch',
     'cleanup_new_process',
     'log_excess_runtime',
+    'get_db_type',
 ]
 
 
@@ -1219,3 +1220,16 @@ def log_excess_runtime(func_logger, cutoff=5.0, debug_cutoff=5.0, msg=None, add_
         return _new_func
 
     return log_excess_runtime_decorator
+
+
+def get_db_type():
+    # Figure out which DB we are running on
+    from django.conf import settings
+
+    conf = settings.DATABASES['default']
+    if conf['ENGINE'] == "awx.main.db.profiled_mssql":
+        return 'mssql'
+    elif conf['ENGINE'] == 'postgres':
+        return 'postgres'
+    else:
+        raise Exception(f"Unknown database engine {conf['ENGINE']}")

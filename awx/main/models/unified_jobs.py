@@ -1049,8 +1049,12 @@ class UnifiedJob(
 
     @property
     def has_unpartitioned_events(self):
-        applied = get_event_partition_epoch()
-        return applied and self.created and self.created < applied
+        from awx.main.utils.common import get_db_type
+
+        if get_db_type() == 'postgres':
+            applied = get_event_partition_epoch()
+            return applied and self.created and self.created < applied
+        return False
 
     def get_event_queryset(self):
         kwargs = {
