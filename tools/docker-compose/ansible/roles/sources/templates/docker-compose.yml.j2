@@ -210,11 +210,25 @@ services:
       - '1433:1433'
       - '135:135'
       - '51000:51000'
+    # The SQL Server image does not allow us to create a DB "on the fly" and we can't use the master DB because queuing can't be enabled there so we are going to create our own DB on container startup
+    command:
+      - bash
+      - -c
+      - 'echo $$INIT_FILE > /var/opt/mssql/initialize.sh && chmod 755 /var/opt/mssql/initialize.sh && echo "/var/opt/mssql/initialize.sh &/opt/mssql/bin/sqlservr" > /var/opt/mssql/entry_point.sh && chmod 755 /var/opt/mssql/entry_point.sh && /var/opt/mssql/entry_point.sh'
     environment:
       ACCEPT_EULA: Y
       SA_PASSWORD: {{ db_password | quote }}
       MSSQL_RPC_PORT: 135
       MSSQL_DTC_TCP_PORT: 51000
+      INIT_FILE: |
+       for i in {1..50}; do
+         /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P {{ db_password | quote }} -d master -Q 'CREATE DATABASE awx;';
+         if [ $$? -eq 0 ]; then
+           echo 'setup.sql completed'; break;
+         else
+           sleep 1;
+         fi
+       done
     volumes:
       - "awx_db_sql_server:/var/opt/mssql"
 {% endif %}

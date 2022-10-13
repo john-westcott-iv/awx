@@ -7,7 +7,7 @@ db_defaults:
     port: 1433
     host: sqlserver
     user: 'sa'
-    db: 'master'
+    db: 'awx'
   postgres:
     port: 5432
     host: postgres
