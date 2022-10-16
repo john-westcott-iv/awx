@@ -1150,6 +1150,10 @@ def deepmerge(a, b):
 
 
 def create_partition(tblname, start=None):
+    if get_db_type != 'postgres':
+        logger.debug("create_partition returning because DB does not support partitioning")
+        return
+
     """Creates new partition table for events.  By default it covers the current hour."""
     if start is None:
         start = now()
