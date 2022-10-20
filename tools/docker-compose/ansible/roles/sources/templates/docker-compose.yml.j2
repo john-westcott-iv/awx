@@ -101,8 +101,13 @@ services:
     ports:
       - "8443:8443"
     environment:
+{% if database == 'postgres' %}
       DB_VENDOR: postgres
       DB_ADDR: postgres
+{% elif database == 'sqlserver' %}
+      DB_VENDOR: mssql
+      DB_ADDR: sqlserver
+{% endif %}
       DB_DATABASE: keycloak
       DB_USER: {{ db_username }}
       DB_PASSWORD: {{ db_password | quote }}
