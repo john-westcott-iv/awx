@@ -1049,9 +1049,7 @@ class UnifiedJob(
 
     @property
     def has_unpartitioned_events(self):
-        from awx.main.utils.common import get_db_type
-
-        if get_db_type() == 'postgres':
+        if connection.vendor == 'postgres':
             applied = get_event_partition_epoch()
             return applied and self.created and self.created < applied
         return False

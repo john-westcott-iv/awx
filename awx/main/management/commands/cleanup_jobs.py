@@ -17,6 +17,7 @@ from django.utils.timezone import now
 
 # AWX
 from awx.main.models import Job, AdHocCommand, ProjectUpdate, InventoryUpdate, SystemJob, WorkflowJob, Notification
+from awx.main.db.sql_queries import find_partitions_to_drop, drop_table, delete_partition
 
 
 def unified_job_class_to_event_table_name(job_class):
@@ -101,12 +102,7 @@ class DeleteMeta:
         tbl_name = unified_job_class_to_event_table_name(self.job_class)
 
         with connection.cursor() as cursor:
-            query = "SELECT inhrelid::regclass::text AS child FROM pg_catalog.pg_inherits"
-            query += f" WHERE inhparent = '{tbl_name}'::regclass"
-            query += f" AND TO_TIMESTAMP(LTRIM(inhrelid::regclass::text, '{tbl_name}_'), 'YYYYMMDD_HH24') < '{self.cutoff}'"
-            query += " ORDER BY inhrelid::regclass::text"
-
-            cursor.execute(query)
+            cursor.execute(find_partitions_to_drop(tbl_name, self.cutoff))
             partitions_from_db = [r[0] for r in cursor.fetchall()]
 
         partitions_dt = [partition_name_dt(p) for p in partitions_from_db if not None]
@@ -130,15 +126,16 @@ class DeleteMeta:
 
             if not self.dry_run:
                 with connection.cursor() as cursor:
-                    cursor.execute(f"DROP TABLE {parts_to_drop_str}")
+                    cursor.execute(drop_table(parts_to_drop_str))
         else:
             self.logger.debug("No event partitions to drop")
 
     def delete(self):
         self.find_jobs_to_delete()
-        self.identify_excluded_partitions()
-        self.find_partitions_to_drop()
-        self.drop_partitions()
+        if connection.vendor == 'postgres':
+            self.identify_excluded_partitions()
+            self.find_partitions_to_drop()
+            self.drop_partitions()
         self.delete_jobs()
         return (self.jobs_no_delete_count, self.jobs_to_delete_count)
 
@@ -205,7 +202,7 @@ class Command(BaseCommand):
 
                 pk_list_csv = ','.join(map(str, pk_list))
                 rel_name = model().event_parent_key
-                cursor.execute(f"DELETE FROM _unpartitioned_{tblname} WHERE {rel_name} IN ({pk_list_csv})")
+                cursor.execute(delete_partition(tblname, rel_name, pk_list_csv))
 
     def cleanup_jobs(self):
         batch_size = 100000

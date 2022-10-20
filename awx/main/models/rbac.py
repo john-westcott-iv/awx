@@ -9,13 +9,14 @@ import re
 
 # Django
 from django.db import models, transaction, connection
+from django.contrib.auth.models import User  # noqa
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.utils.translation import gettext_lazy as _
 
 # AWX
 from awx.api.versioning import reverse
-from django.contrib.auth.models import User  # noqa
+from awx.main.db.sql_queries import get_roles_from_parents, add_role_ancestors, delete_role_ancestors
 
 __all__ = [
     'Role',
@@ -328,23 +329,7 @@ class Role(models.Model):
                 if len(removals) > 0:
                     for ids in split_ids_for_sqlite(removals):
                         sql_params['ids'] = ','.join(str(x) for x in ids)
-                        cursor.execute(
-                            '''
-                            DELETE FROM %(ancestors_table)s
-                            WHERE descendent_id IN (%(ids)s)
-                                  AND descendent_id != ancestor_id
-                                  AND NOT EXISTS (
-                                      SELECT 1
-                                        FROM %(parents_table)s as parents
-                                             INNER JOIN %(ancestors_table)s as inner_ancestors
-                                                     ON (parents.to_role_id = inner_ancestors.descendent_id)
-                                       WHERE parents.from_role_id = %(ancestors_table)s.descendent_id
-                                             AND %(ancestors_table)s.ancestor_id = inner_ancestors.ancestor_id
-                                  )
-                        '''
-                            % sql_params
-                        )
-
+                        cursor.execute(delete_role_ancestors(sql_params['ancestors_table'], sql_params['parents_table'], sql_params['ids']))
                         delete_ct += cursor.rowcount
 
                 insert_ct = 0
@@ -352,38 +337,7 @@ class Role(models.Model):
                     for ids in split_ids_for_sqlite(additions):
                         sql_params['ids'] = ','.join(str(x) for x in ids)
                         cursor.execute(
-                            '''
-                            INSERT INTO %(ancestors_table)s (descendent_id, ancestor_id, role_field, content_type_id, object_id)
-                            SELECT from_id, to_id, new_ancestry_list.role_field, new_ancestry_list.content_type_id, new_ancestry_list.object_id FROM  (
-                                  SELECT roles.id from_id,
-                                         ancestors.ancestor_id to_id,
-                                         roles.role_field,
-                                         COALESCE(roles.content_type_id, 0) content_type_id,
-                                         COALESCE(roles.object_id, 0) object_id
-                                    FROM %(roles_table)s as roles
-                                         INNER JOIN %(parents_table)s as parents
-                                                 ON (parents.from_role_id = roles.id)
-                                         INNER JOIN %(ancestors_table)s as ancestors
-                                                 ON (parents.to_role_id = ancestors.descendent_id)
-                                   WHERE roles.id IN (%(ids)s)
-
-                                   UNION
-
-                                  SELECT id from_id,
-                                         id to_id,
-                                         role_field,
-                                         COALESCE(content_type_id, 0) content_type_id,
-                                         COALESCE(object_id, 0) object_id
-                                   from %(roles_table)s WHERE id IN (%(ids)s)
-                             ) new_ancestry_list
-                             WHERE NOT EXISTS (
-                                SELECT 1 FROM %(ancestors_table)s
-                                 WHERE %(ancestors_table)s.descendent_id = new_ancestry_list.from_id
-                                       AND %(ancestors_table)s.ancestor_id = new_ancestry_list.to_id
-                             )
-
-                        '''
-                            % sql_params
+                            add_role_ancestors(sql_params['ancestors_table'], sql_params['roles_table'], sql_params['parents_table'], sql_params['ids'])
                         )
                         insert_ct += cursor.rowcount
 
@@ -394,7 +348,7 @@ class Role(models.Model):
                 for ids in split_ids_for_sqlite(additions):
                     sql_params['ids'] = ','.join(str(x) for x in ids)
                     # get all children for the roles we're operating on
-                    cursor.execute('SELECT DISTINCT from_role_id FROM %(parents_table)s WHERE to_role_id IN (%(ids)s)' % sql_params)
+                    cursor.execute(get_roles_from_parents(sql_params['parents_table'], sql_params['ids']))
                     new_additions.update([row[0] for row in cursor.fetchall()])
                 additions = list(new_additions)
 
@@ -402,7 +356,7 @@ class Role(models.Model):
                 for ids in split_ids_for_sqlite(removals):
                     sql_params['ids'] = ','.join(str(x) for x in ids)
                     # get all children for the roles we're operating on
-                    cursor.execute('SELECT DISTINCT from_role_id FROM %(parents_table)s WHERE to_role_id IN (%(ids)s)' % sql_params)
+                    cursor.execute(get_roles_from_parents(sql_params['parents_table'], sql_params['ids']))
                     new_removals.update([row[0] for row in cursor.fetchall()])
                 removals = list(new_removals)
 

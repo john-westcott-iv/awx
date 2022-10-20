@@ -2,6 +2,7 @@ from django.core.management.base import BaseCommand
 from django.db import connection
 
 from awx.main.models import JobTemplate
+from awx.main.db.sql_queries import get_job_history
 
 
 class Command(BaseCommand):
@@ -23,29 +24,7 @@ class Command(BaseCommand):
 
         print('## ' + JobTemplate.objects.get(pk=jt).name + f' (last {history} runs)\n')
         with connection.cursor() as cursor:
-            cursor.execute(
-                f'''
-                SELECT
-                    b.id, b.job_id, b.host_name, b.created - a.created delta,
-                    b.task task,
-                    b.event_data::json->'task_action' task_action,
-                    b.event_data::json->'task_path' task_path
-                FROM main_jobevent a JOIN main_jobevent b
-                ON b.parent_uuid = a.parent_uuid  AND a.host_name = b.host_name
-                WHERE
-                    a.event = 'runner_on_start' AND
-                    b.event != 'runner_on_start' AND
-                    b.event != 'runner_on_skipped' AND
-                    b.failed = false AND
-                    a.job_id IN (
-                        SELECT unifiedjob_ptr_id FROM main_job
-                        WHERE job_template_id={jt}
-                        ORDER BY unifiedjob_ptr_id DESC
-                        LIMIT {history}
-                    )
-                ORDER BY delta DESC;
-                '''
-            )
+            cursor.execute(get_job_history(jt, history))
             slowest_events = cursor.fetchall()
 
         def format_td(x):

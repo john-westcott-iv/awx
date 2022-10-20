@@ -40,6 +40,7 @@ from django.apps import apps
 
 # AWX
 from awx.conf.license import get_license
+from awx.main.db.sql_queries import partition_table
 
 logger = logging.getLogger('awx.main.utils')
 
@@ -1150,7 +1151,7 @@ def deepmerge(a, b):
 
 
 def create_partition(tblname, start=None):
-    if get_db_type != 'postgres':
+    if connection.vendor != 'postgres':
         logger.debug("create_partition returning because DB does not support partitioning")
         return
 
@@ -1169,11 +1170,7 @@ def create_partition(tblname, start=None):
     try:
         with transaction.atomic():
             with connection.cursor() as cursor:
-                cursor.execute(
-                    f'CREATE TABLE IF NOT EXISTS {tblname}_{partition_label} '
-                    f'PARTITION OF {tblname} '
-                    f'FOR VALUES FROM (\'{start_timestamp}\') to (\'{end_timestamp}\');'
-                )
+                cursor.execute(partition_table(tblname, partition_label, start_timestamp, end_timestamp))
     except ProgrammingError as e:
         logger.debug(f'Caught known error due to existing partition: {e}')
 
@@ -1224,16 +1221,3 @@ def log_excess_runtime(func_logger, cutoff=5.0, debug_cutoff=5.0, msg=None, add_
         return _new_func
 
     return log_excess_runtime_decorator
-
-
-def get_db_type():
-    # Figure out which DB we are running on
-    from django.conf import settings
-
-    conf = settings.DATABASES['default']
-    if conf['ENGINE'] == "awx.main.db.profiled_mssql":
-        return 'mssql'
-    elif conf['ENGINE'] == 'postgres':
-        return 'postgres'
-    else:
-        raise Exception(f"Unknown database engine {conf['ENGINE']}")

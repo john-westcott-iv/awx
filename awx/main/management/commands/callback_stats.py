@@ -4,13 +4,16 @@ import sys
 from django.db import connection
 from django.core.management.base import BaseCommand
 
+from awx.main.db.sql_queries import get_max_id, get_number_of_relations_for_last_minute
+
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
+
         with connection.cursor() as cursor:
             start = {}
             for relation in ('main_jobevent', 'main_inventoryupdateevent', 'main_projectupdateevent', 'main_adhoccommandevent'):
-                cursor.execute(f"SELECT MAX(id) FROM {relation};")
+                cursor.execute(get_max_id(relation))
                 start[relation] = cursor.fetchone()[0] or 0
             clear = False
             while True:
@@ -18,7 +21,7 @@ class Command(BaseCommand):
                 for relation in ('main_jobevent', 'main_inventoryupdateevent', 'main_projectupdateevent', 'main_adhoccommandevent'):
                     lines.append(relation)
                     minimum = start[relation]
-                    cursor.execute(f"SELECT MAX(id) - MIN(id) FROM {relation} WHERE id > {minimum} AND modified > now() - '1 minute'::interval;")
+                    cursor.execute(get_number_of_relations_for_last_minute(relation, minimum_id))
                     events = cursor.fetchone()[0] or 0
                     lines.append(f'↳  last minute {events}')
                     lines.append('')

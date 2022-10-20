@@ -3,6 +3,7 @@
 
 from django.core.management.base import BaseCommand
 from django.db import connection
+from awx.main.db.sql_queries import get_db_version_sql
 
 
 class Command(BaseCommand):
@@ -10,7 +11,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         with connection.cursor() as cursor:
-            cursor.execute("SELECT version()")
+            cursor.execute(get_db_version_sql())
             version = str(cursor.fetchone()[0])
 
         return "Database Version: {}".format(version)
