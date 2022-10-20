@@ -31,7 +31,7 @@ class RecordedQueryLog(object):
         try:
             self.write(query)
         except Exception:
-            # not sure what else to do her e- we can't really safely
+            # not sure what else to do here - we can't really safely
             # *use* our loggers because it'll just generate more DB queries
             # and potentially recurse into this state again
             _, _, tb = sys.exc_info()
@@ -46,18 +46,16 @@ class RecordedQueryLog(object):
         # if the query is slow enough...
         if seconds >= self.threshold:
             sql = query['sql']
-            if sql.startswith('EXPLAIN'):
-                return
 
             # build a printable Python stack
             bt = ' '.join(traceback.format_stack())
 
-            # and re-run the same query w/ EXPLAIN
-            explain = ''
-            cursor = self.db.cursor()
-            cursor.execute('EXPLAIN VERBOSE {}'.format(sql))
-            for line in cursor.fetchall():
-                explain += line[0] + '\n'
+            # SQL Server can not do individual explains, it can only be set at a database level with SET SHOWPLAN_ALL:
+            #   (https://learn.microsoft.com/en-us/sql/t-sql/statements/set-showplan-all-transact-sql?redirectedfrom=MSDN&view=sql-server-ver16)
+            # Because of this we are not going to try and run an explain here.
+            # We could maybe do something like SET SHOWPLAN_ALL ON; <run query>; SET SHOWPLAN_ALL OFF but any other DB calls
+            #   would end up in "read only" mode so if there activity during the "explain" it could really cause wacky results.
+            # We will still log the SQL call so that someone can take the time to turn on SHOWPLAN if they want and re-run.
 
             # write a row of data into a per-PID sqlite database
             if not os.path.isdir(self.dest):
@@ -81,14 +79,13 @@ class RecordedQueryLog(object):
                 '   argv REAL,'
                 '   time REAL,'
                 '   sql TEXT,'
-                '   explain TEXT,'
                 '   bt TEXT'
                 ');'
             )
             log.commit()
             log.execute(
-                'INSERT INTO queries (pid, version, argv, time, sql, explain, bt) ' 'VALUES (?, ?, ?, ?, ?, ?, ?);',
-                (os.getpid(), version, ' '.join(sys.argv), seconds, sql, explain, bt),
+                'INSERT INTO queries (pid, version, argv, time, sql, bt) ' 'VALUES (?, ?, ?, ?, ?, ?);',
+                (os.getpid(), version, ' '.join(sys.argv), seconds, sql, bt),
             )
             log.commit()
 
