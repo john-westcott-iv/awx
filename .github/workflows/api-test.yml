@@ -30,7 +30,7 @@ jobs:
 
       - name: SonarCloud Scan
         # We want this to run even if the tests fail
-        if: (success() || failure()) && github.repository == 'ansible/awx'
+        if: (success() || failure()) #&& github.repository == 'ansible/awx'
         uses: SonarSource/sonarcloud-github-action@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
