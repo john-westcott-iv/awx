@@ -5911,3 +5911,26 @@ class ActivityStreamSerializer(BaseSerializer):
         if obj.setting:
             summary_fields['setting'] = [obj.setting]
         return summary_fields
+
+
+class AnalyticsReportSerializer(serializers.Serializer):
+    limit = serializers.IntegerField(default="20")
+    offset = serializers.IntegerField(default="0")
+    sort_options = serializers.CharField(default="name")
+    sort_order = serializers.CharField(default="asc")
+    tags = serializers.ListField(allow_empty=True, default=[])
+    slug = serializers.ListField(allow_empty=True, default=[])
+    name = serializers.ListField(allow_empty=True, default=[])
+    description = serializers.CharField(default="name")
+
+    class Meta:
+        fields = (
+            'limit',
+            'offset',
+            'sort_options',
+            'sort_order',
+            'tags',
+            'slug',
+            'name',
+            'description',
+        )

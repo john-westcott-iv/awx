@@ -6,9 +6,10 @@ from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 from django.utils import translation
 
-from awx.api.generics import APIView, Response
+from awx.api.generics import GenericAPIView, APIView, Response
 from awx.api.permissions import IsSystemAdminOrAuditor
 from awx.api.versioning import reverse
+from awx.api.serializers import AnalyticsReportSerializer
 from awx.main.utils import get_awx_version
 from rest_framework.permissions import AllowAny
 from rest_framework import status
@@ -247,9 +248,10 @@ class AnalyticsAuthorizedView(AnalyticsGenericListView):
     name = _("Authorized")
 
 
-class AnalyticsReportsList(GetNotAllowedMixin, AnalyticsGenericListView):
+class AnalyticsReportsList(GenericAPIView, GetNotAllowedMixin, AnalyticsGenericListView):
     name = _("Reports")
     swagger_topic = "Automation Analytics"
+    serializer_class = AnalyticsReportSerializer
 
 
 class AnalyticsReportDetail(AnalyticsGenericDetailView):
