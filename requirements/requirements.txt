@@ -93,7 +93,7 @@ defusedxml==0.7.1
     #   social-auth-core
 distro==1.8.0
     # via -r /awx_devel/requirements/requirements.in
-django==3.2.16
+django==4.1.2
     # via
     #   -r /awx_devel/requirements/requirements.in
     #   channels
@@ -329,7 +329,6 @@ python3-openid==3.2.0
     # via -r /awx_devel/requirements/requirements_git.txt
 pytz==2022.6
     # via
-    #   django
     #   djangorestframework
     #   irc
     #   tempora
