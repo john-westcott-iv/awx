@@ -1,24 +1,16 @@
 # Copyright (c) 2015 Ansible, Inc.
 # All Rights Reserved.
 
+# Python
 import base64
 import os
 import re  # noqa
-import sys
 import tempfile
 import socket
 from datetime import timedelta
 
-
-if "pytest" in sys.modules:
-    IS_TESTING_MODE = True
-    from unittest import mock
-
-    with mock.patch('__main__.__builtins__.dir', return_value=[]):
-        import ldap
-else:
-    IS_TESTING_MODE = False
-    import ldap
+# python-ldap
+import ldap
 
 
 DEBUG = True
@@ -734,10 +726,10 @@ CONTROLLER_INSTANCE_ID_VAR = 'remote_tower_id'
 # ---------------------
 # ----- Foreman -----
 # ---------------------
-SATELLITE6_ENABLED_VAR = 'foreman_enabled'
+SATELLITE6_ENABLED_VAR = 'foreman_enabled,foreman.enabled'
 SATELLITE6_ENABLED_VALUE = 'True'
 SATELLITE6_EXCLUDE_EMPTY_GROUPS = True
-SATELLITE6_INSTANCE_ID_VAR = 'foreman_id'
+SATELLITE6_INSTANCE_ID_VAR = 'foreman_id,foreman.id'
 # SATELLITE6_GROUP_PREFIX and SATELLITE6_GROUP_PATTERNS defined in source vars
 
 # ----------------
