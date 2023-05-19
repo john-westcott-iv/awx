@@ -56,6 +56,7 @@ options:
         - The kind field. Cannot be modified after created.
       choices: ["", "smart", "constructed"]
       type: str
+      default: ""
     host_filter:
       description:
         - The host_filter field. Only useful when C(kind=smart).
@@ -145,7 +146,7 @@ def main():
         description=dict(),
         organization=dict(required=True),
         variables=dict(type='dict'),
-        kind=dict(choices=['', 'smart', 'constructed']),
+        kind=dict(choices=['', 'smart', 'constructed'], default=''),
         host_filter=dict(),
         instance_groups=dict(type="list", elements='str'),
         prevent_instance_group_fallback=dict(type='bool'),
