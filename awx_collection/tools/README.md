@@ -19,7 +19,7 @@ It is intended as a tool for writing new modules or enforcing consistency.
 
 These instructions assume you have ansible-core and the collection installed.
 To install the collection in-place (to pick up any local changes to source)
-the `make symlink_collection` will simplink the `awx_collection/` folder to
+the `make symlink_collection` will symlink the `awx_collection/` folder to
 the approprate place under `~/.ansible/collections`.
 
 This is a shortcut for quick validation of tests that bypasses `ansible-test`.
