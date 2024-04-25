@@ -2692,12 +2692,16 @@ class JobTemplateCallback(GenericAPIView):
         host for the current request.
         """
         # Find the list of remote host names/IPs to check.
+        for header in self.request.META:
+            logger.warning(f"{header}: {self.request.META[header]}")
         remote_hosts = set()
         for header in settings.REMOTE_HOST_HEADERS:
+            logger.error(f"Checking on header {header} with value ({self.request.META.get(header, '')})")
             for value in self.request.META.get(header, '').split(','):
                 value = value.strip()
                 if value:
                     remote_hosts.add(value)
+        logger.error(f"Matching hosts: {remote_hosts}")
         # Add the reverse lookup of IP addresses.
         for rh in list(remote_hosts):
             try:

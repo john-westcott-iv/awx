@@ -163,12 +163,12 @@ ALLOWED_HOSTS = []
 # HTTP headers and meta keys to search to determine remote host name or IP. Add
 # additional items to this list, such as "HTTP_X_FORWARDED_FOR", if behind a
 # reverse proxy.
-REMOTE_HOST_HEADERS = ['REMOTE_ADDR', 'REMOTE_HOST']
+# REMOTE_HOST_HEADERS = ['REMOTE_ADDR', 'REMOTE_HOST']
 
 # If we are behind a reverse proxy/load balancer, use this setting to
 # allow the proxy IP addresses from which Tower should trust custom
 # REMOTE_HOST_HEADERS header values
-# REMOTE_HOST_HEADERS = ['HTTP_X_FORWARDED_FOR', ''REMOTE_ADDR', 'REMOTE_HOST']
+REMOTE_HOST_HEADERS = ['HTTP_X_FORWARDED_FOR', 'REMOTE_ADDR', 'REMOTE_HOST', 'X-ENVOY-EXTERAL-ADDRESS']
 # PROXY_IP_ALLOWED_LIST = ['10.0.1.100', '10.0.1.101']
 # If this setting is an empty list (the default), the headers specified by
 # REMOTE_HOST_HEADERS will be trusted unconditionally')
